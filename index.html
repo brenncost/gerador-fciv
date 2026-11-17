@@ -166,7 +166,7 @@
       background: #e2e8f0; color: #334155; padding: 1px 5px; border-radius: 4px;
     }
 
-    input[type="text"], input[type="number"], select, textarea {
+    input[type="text"], input[type="number"], input[type="password"], select, textarea {
       width: 100%; padding: 8px 10px;
       border: 1px solid var(--border); border-radius: var(--radius-sm);
       font-family: inherit; font-size: 0.9rem; color: var(--text); background: #ffffff;
@@ -353,20 +353,39 @@
       <button type="button" class="modal-close" onclick="closeUsersModal()">&times;</button>
     </div>
     <div class="modal-body">
-      <div class="grid grid-2" style="margin-bottom:10px;">
-        <div class="field">
-          <label for="newUserLogin">Novo Usuário</label>
-          <input type="text" id="newUserLogin" placeholder="Ex: JOAO">
+      <div style="margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--border-light);">
+        <strong style="display:block; margin-bottom:8px; color:var(--bg-navy);">Alterar Minha Senha</strong>
+        <div class="grid grid-3" style="margin-bottom:8px;">
+          <div class="field">
+            <label for="chgCurPass">Senha Atual</label>
+            <input type="password" id="chgCurPass" placeholder="Atual">
+          </div>
+          <div class="field">
+            <label for="chgNewPass">Nova Senha</label>
+            <input type="password" id="chgNewPass" placeholder="Nova">
+          </div>
+          <div class="field">
+            <label for="chgConfPass">Confirmar</label>
+            <input type="password" id="chgConfPass" placeholder="Repetir">
+          </div>
         </div>
-        <div class="field">
-          <label for="newUserPass">Senha</label>
-          <input type="password" id="newUserPass" placeholder="Senha">
-        </div>
+        <button type="button" class="btn btn-navy btn-sm" onclick="changeOwnPassword()">Salvar Nova Senha</button>
       </div>
-      <button type="button" class="btn btn-primary btn-sm" onclick="addLocalUser()" style="margin-bottom:14px;">+ Criar Usuário</button>
-      <div id="usersListArea"></div>
-      <div class="hint" style="margin-top:8px;">
-        Usuários criados aqui ficam salvos neste navegador. Para liberar um usuário em todos os computadores pelo link online, basta me pedir para adicioná-lo no código.
+
+      <div id="adminUsersSection">
+        <strong style="display:block; margin-bottom:8px; color:var(--bg-navy);">Criar / Remover Outros Usuários</strong>
+        <div class="grid grid-2" style="margin-bottom:10px;">
+          <div class="field">
+            <label for="newUserLogin">Novo Usuário</label>
+            <input type="text" id="newUserLogin" placeholder="Ex: JOAO">
+          </div>
+          <div class="field">
+            <label for="newUserPass">Senha</label>
+            <input type="password" id="newUserPass" placeholder="Senha">
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="addLocalUser()" style="margin-bottom:14px;">+ Criar Usuário</button>
+        <div id="usersListArea"></div>
       </div>
     </div>
   </div>
@@ -1767,7 +1786,7 @@ function simpleHash(str) {
   h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
 }
-BUILTIN_USERS["BRE"].hash = simpleHash("BRE:@!Marinha2026");
+BUILTIN_USERS["BRE"].hash = simpleHash("BRE:@Br0344");
 
 function getLocalUsers() {
   try {
@@ -1787,8 +1806,8 @@ function applyAuthUI(user) {
   if (user) {
     overlay.className = "login-overlay hidden";
     btnLogout.className = "btn btn-danger-outline btn-sm";
-    if (user === "BRE") btnUsers.className = "btn btn-outline btn-sm";
-    else btnUsers.className = "btn btn-outline btn-sm hidden";
+    btnUsers.className = "btn btn-outline btn-sm";
+    btnUsers.textContent = user === "BRE" ? "Usuários / Senha" : "Alterar Senha";
   } else {
     overlay.className = "login-overlay";
     btnLogout.className = "btn btn-danger-outline btn-sm hidden";
@@ -1796,21 +1815,21 @@ function applyAuthUI(user) {
   }
 }
 
+function getEffectiveHash(u) {
+  var locals = getLocalUsers();
+  if (locals[u] && locals[u].hash) return locals[u].hash;
+  if (BUILTIN_USERS[u]) return BUILTIN_USERS[u].hash;
+  return null;
+}
+
 function handleLogin(evt) {
   evt.preventDefault();
   var u = document.getElementById("loginUser").value.trim().toUpperCase();
   var p = document.getElementById("loginPass").value;
   var errEl = document.getElementById("loginError");
-  var h = simpleHash(u + ":" + p);
+  var expected = getEffectiveHash(u);
 
-  var valid = false;
-  if (BUILTIN_USERS[u] && BUILTIN_USERS[u].hash === h) valid = true;
-  else {
-    var locals = getLocalUsers();
-    if (locals[u] && locals[u].hash === h) valid = true;
-  }
-
-  if (valid) {
+  if (expected && expected === simpleHash(u + ":" + p)) {
     errEl.style.display = "none";
     try { sessionStorage.setItem(AUTH_SESSION_KEY, u); } catch (e) {}
     applyAuthUI(u);
@@ -1826,8 +1845,37 @@ function handleLogout() {
 }
 
 function openUsersModal() {
+  var current = null;
+  try { current = sessionStorage.getItem(AUTH_SESSION_KEY); } catch (e) {}
+  var adminSec = document.getElementById("adminUsersSection");
+  if (adminSec) adminSec.style.display = (current === "BRE") ? "block" : "none";
+  document.getElementById("chgCurPass").value = "";
+  document.getElementById("chgNewPass").value = "";
+  document.getElementById("chgConfPass").value = "";
   renderUsersList();
   document.getElementById("usersModal").className = "modal-backdrop open";
+}
+
+function changeOwnPassword() {
+  var current = null;
+  try { current = sessionStorage.getItem(AUTH_SESSION_KEY); } catch (e) {}
+  if (!current) return;
+  var curP = document.getElementById("chgCurPass").value;
+  var newP = document.getElementById("chgNewPass").value;
+  var confP = document.getElementById("chgConfPass").value;
+  if (!curP || !newP) { showToast("Preencha a senha atual e a nova senha.", "error"); return; }
+  if (newP !== confP) { showToast("A confirmação da nova senha não confere.", "error"); return; }
+  var expected = getEffectiveHash(current);
+  if (expected !== simpleHash(current + ":" + curP)) {
+    showToast("Senha atual incorreta.", "error"); return;
+  }
+  var locals = getLocalUsers();
+  locals[current] = { hash: simpleHash(current + ":" + newP) };
+  saveLocalUsers(locals);
+  document.getElementById("chgCurPass").value = "";
+  document.getElementById("chgNewPass").value = "";
+  document.getElementById("chgConfPass").value = "";
+  showToast("Senha alterada com sucesso!", "success");
 }
 
 function closeUsersModal() {
