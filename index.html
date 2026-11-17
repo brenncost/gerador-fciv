@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de FCIV — Marinha do Brasil</title>
+  <style>
+    :root {
+      --bg-page: #eef2f7;
+      --bg-card: #ffffff;
+      --bg-subtle: #f8fafc;
+      --bg-navy: #0c2340;
+      --bg-navy-light: #163a66;
+      --accent: #1d4ed8;
+      --accent-hover: #1e40af;
+      --accent-soft: #eff6ff;
+      --success: #047857;
+      --success-hover: #065f46;
+      --success-soft: #ecfdf5;
+      --warning: #b45309;
+      --warning-soft: #fffbeb;
+      --danger: #b91c1c;
+      --danger-soft: #fef2f2;
+      --border: #cbd5e1;
+      --border-light: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-light: #64748b;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+      --shadow-lg: 0 10px 28px rgba(15, 23, 42, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, Arial, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text);
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .topbar {
+      background: linear-gradient(135deg, var(--bg-navy) 0%, var(--bg-navy-light) 100%);
+      color: #ffffff;
+      padding: 16px 24px;
+      border-bottom: 4px solid #d4af37;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .topbar-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      width: 40px; height: 40px; border-radius: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .brand h1 { margin: 0; font-size: 1.25rem; font-weight: 700; }
+    .brand p { margin: 2px 0 0; font-size: 0.8rem; color: #cbd5e1; }
+
+    .topbar-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .badge-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.22); color: #f8fafc;
+    }
+    .badge-pill.ok {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.45); color: #a7f3d0;
+    }
+
+    .container { max-width: 1280px; margin: 20px auto 60px; padding: 0 16px; }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 13px 18px;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border-light);
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+    }
+
+    .card-title {
+      margin: 0; font-size: 1rem; font-weight: 700; color: var(--bg-navy);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .step-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--bg-navy); color: #ffffff;
+      font-size: 0.78rem; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    .card-body { padding: 18px; }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+      gap: 12px; margin-bottom: 18px;
+    }
+    @media (max-width: 600px) { .mode-switch { grid-template-columns: 1fr; } }
+
+    .mode-btn {
+      text-align: left; padding: 12px 16px;
+      border-radius: var(--radius); border: 2px solid var(--border);
+      background: var(--bg-subtle); cursor: pointer; transition: all 0.15s ease;
+      display: flex; align-items: flex-start; gap: 12px; font-family: inherit; color: var(--text);
+    }
+    .mode-btn:hover { border-color: #94a3b8; background: #ffffff; }
+    .mode-btn.active {
+      border-color: var(--accent); background: var(--accent-soft);
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+    }
+    .mode-radio {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid #94a3b8; margin-top: 2px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mode-btn.active .mode-radio { border-color: var(--accent); background: var(--accent); }
+    .mode-btn.active .mode-radio::after {
+      content: ""; width: 6px; height: 6px; border-radius: 50%; background: #ffffff;
+    }
+    .mode-label { font-weight: 700; font-size: 0.95rem; display: block; color: var(--bg-navy); }
+    .mode-desc { font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 2px; }
+
+    .grid { display: grid; gap: 12px; }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    @media (max-width: 960px) { .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 640px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label {
+      font-size: 0.76rem; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.3px;
+      display: flex; align-items: center; justify-content: space-between; gap: 4px;
+    }
+
+    .cell-ref {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.68rem; font-weight: 600;
+      background: #e2e8f0; color: #334155; padding: 1px 5px; border-radius: 4px;
+    }
+
+    input[type="text"], input[type="number"], select, textarea {
+      width: 100%; padding: 8px 10px;
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 0.9rem; color: var(--text); background: #ffffff;
+    }
+    textarea.bulk-input {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.85rem; line-height: 1.55; min-height: 180px; resize: vertical;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+    }
+
+    .hint { font-size: 0.74rem; color: var(--text-light); margin-top: 2px; }
+
+    /* Aeronaves -> Motor inteligente */
+    .anv-config-box {
+      margin-top: 16px;
+      padding: 14px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+    }
+    .anv-config-header {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+      margin-bottom: 10px;
+    }
+    .anv-config-title {
+      font-size: 0.85rem; font-weight: 700; color: var(--bg-navy);
+    }
+    .anv-list {
+      display: flex; flex-wrap: wrap; gap: 10px;
+    }
+    .anv-item {
+      display: flex; align-items: center; gap: 6px;
+      background: #ffffff; border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 8px;
+    }
+    .anv-item input { width: 110px; padding: 5px 8px; font-weight: 700; text-transform: uppercase; }
+    .anv-item select { width: 145px; padding: 5px 8px; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 8px 14px; border-radius: var(--radius-sm); border: 1px solid transparent;
+      font-family: inherit; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+    }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #ffffff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-success { background: var(--success); color: #ffffff; }
+    .btn-success:hover:not(:disabled) { background: var(--success-hover); }
+    .btn-navy { background: var(--bg-navy); color: #ffffff; }
+    .btn-navy:hover:not(:disabled) { background: var(--bg-navy-light); }
+    .btn-outline { background: #ffffff; border-color: var(--border); color: var(--text); }
+    .btn-outline:hover:not(:disabled) { background: var(--bg-subtle); border-color: #94a3b8; }
+    .btn-danger-outline { background: #ffffff; border-color: #fecaca; color: var(--danger); }
+    .btn-danger-outline:hover:not(:disabled) { background: var(--danger-soft); }
+    .btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+    .btn-xs { padding: 3px 7px; font-size: 0.72rem; }
+
+    .alert {
+      padding: 12px 14px; border-radius: var(--radius-sm);
+      font-size: 0.83rem; margin-bottom: 14px; border: 1px solid transparent;
+    }
+    .alert-info { background: var(--accent-soft); border-color: #bfdbfe; color: #1e3a8a; }
+    .alert-warn { background: var(--warning-soft); border-color: #fde68a; color: #78350f; }
+
+    .code-example {
+      margin-top: 8px; padding: 8px 10px;
+      background: #ffffff; border: 1px solid #bfdbfe; border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.78rem; color: #0f172a; overflow-x: auto; white-space: pre;
+    }
+
+    .toolbar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 10px; margin-top: 12px;
+    }
+    .toolbar-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+    .preview-table {
+      width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 14px;
+    }
+    .preview-table th, .preview-table td {
+      border: 1px solid var(--border); padding: 7px 9px; text-align: left; vertical-align: top;
+    }
+    .preview-table th {
+      background: var(--bg-subtle); font-weight: 700; color: var(--bg-navy);
+    }
+    .badge-model {
+      display: inline-block; background: #dcfce7; color: #14532d;
+      border: 1px solid #bbf7d0; border-radius: 4px;
+      padding: 2px 6px; font-size: 0.74rem; font-weight: 600; margin: 2px 4px 2px 0;
+    }
+    .filename-pill {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.74rem; background: #eef2ff; color: #3730a3;
+      border: 1px solid #c7d2fe; padding: 2px 6px; border-radius: 4px;
+    }
+    .stat-chip {
+      background: #ffffff; border: 1px solid var(--border);
+      border-radius: 5px; padding: 4px 10px; font-weight: 600; font-size: 0.82rem;
+    }
+
+    .toast {
+      position: fixed; bottom: 20px; right: 20px;
+      background: var(--bg-navy); color: #ffffff;
+      padding: 10px 16px; border-radius: 8px; box-shadow: var(--shadow-lg);
+      font-size: 0.85rem; font-weight: 600; z-index: 2000; display: none; max-width: 380px;
+    }
+    .toast.show { display: block; }
+    .toast.error { background: var(--danger); }
+    .toast.success { background: var(--success); }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-icon" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="8" y1="13" x2="16" y2="13"></line>
+          <line x1="8" y1="17" x2="16" y2="17"></line>
+        </svg>
+      </div>
+      <div>
+        <h1>Gerador de FCIV — Ficha de Controle Individual de Voo</h1>
+        <p>100% Offline • Sem CDN • Preenchimento em lote no modelo oficial (.ods)</p>
+      </div>
+    </div>
+    <div class="topbar-badges">
+      <span class="badge-pill ok">&#10003; 100% Offline • Firefox ESR</span>
+      <span class="badge-pill" id="templateStatusBadge">Modelo: NIP_Esqd_ANO.ods (embutido)</span>
+      <label class="btn btn-outline btn-sm" style="cursor:pointer; color:#0f172a;">
+        Trocar Modelo (.ods)
+        <input type="file" id="customTemplateInput" accept=".ods" style="display:none;">
+      </label>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- PARTE DE CIMA: CONFIGURAÇÃO INTELIGENTE -->
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">
+        <span class="step-num">1</span>
+        Configuração Geral &amp; Aeronaves (Tipo de Motor automático)
+      </h2>
+      <span class="hint" id="periodoPreviewBadge" style="font-weight:700; color:#1d4ed8;">
+        Período: 01/01/2026 até 31/12/2026
+      </span>
+    </div>
+    <div class="card-body">
+      <div class="mode-switch" role="radiogroup" aria-label="Tipo de Ficha">
+        <button type="button" class="mode-btn active" id="btnModeXY" onclick="setMode('XY')">
+          <span class="mode-radio"></span>
+          <span>
+            <span class="mode-label">Modo XY</span>
+            <span class="mode-desc">Gera FCIVs com Modelo (2x), Tipo de Motor automático, Horas XY (K) e Data do Último Voo (L).</span>
+          </span>
+        </button>
+        <button type="button" class="mode-btn" id="btnModePiloto" onclick="setMode('PILOTO')">
+          <span class="mode-radio"></span>
+          <span>
+            <span class="mode-label">Modo Piloto</span>
+            <span class="mode-desc">Mesma lógica com suporte às colunas completas de Piloto.</span>
+          </span>
+        </button>
+      </div>
+
+      <div class="grid grid-4">
+        <div class="field">
+          <label for="cfgOmVoou">OM em que Voou <span class="cell-ref">AA7</span></label>
+          <input type="text" id="cfgOmVoou" value="ESQDHU-1" placeholder="Ex: ESQDHU-1">
+          <span class="hint">Preenche AA7 e o nome do arquivo salvo.</span>
+        </div>
+
+        <div class="field">
+          <label for="cfgAno">Ano da FCIV <span class="cell-ref">N7 / N8</span></label>
+          <input type="number" id="cfgAno" value="2026" min="1990" max="2100">
+          <span class="hint">Preenche 01/01/ANO e 31/12/ANO.</span>
+        </div>
+
+        <div class="field">
+          <label for="cfgEncNome">Nome do Encarregado <span class="cell-ref">N41</span></label>
+          <input type="text" id="cfgEncNome" placeholder="Nome completo do Encarregado">
+        </div>
+
+        <div class="field">
+          <label for="cfgEncPatente">Patente do Encarregado <span class="cell-ref">N42</span></label>
+          <input type="text" id="cfgEncPatente" placeholder="Ex: CC, CT, Capitão-de-Corveta">
+        </div>
+      </div>
+
+      <!-- Mapeamento Inteligente: Modelo ANV -> Monomotor / Bimotor -->
+      <div class="anv-config-box">
+        <div class="anv-config-header">
+          <span class="anv-config-title">
+            Aeronaves do Esquadrão (preenche automaticamente o Tipo de Motor em A14 / A18 / A22)
+          </span>
+          <button type="button" class="btn btn-primary btn-sm" onclick="addAnvRule()">+ Adicionar Aeronave</button>
+        </div>
+        <div class="anv-list" id="anvRulesList"></div>
+        <div class="hint" style="margin-top:8px;">
+          Quando você colar os dados na caixa abaixo usando o nome da aeronave (ex.: <strong>UH-12</strong> ou <strong>UH-17</strong>), o sistema aplica automaticamente se ela é <strong>MONOMOTOR</strong> ou <strong>BIMOTOR</strong>.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PARTE DE BAIXO: CAMPO ÚNICO OBJETIVO E AUTOEXPLICATIVO -->
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">
+        <span class="step-num">2</span>
+        Lista de Militares para Gerar FCIVs (Cole ou Digite em Lote)
+      </h2>
+      <span class="stat-chip" id="parsedCountBadge">0 FCIV(s) pronta(s)</span>
+    </div>
+    <div class="card-body">
+      <div class="alert alert-info">
+        <div>
+          <strong>Ordem das colunas (separadas por TAB ao copiar da planilha, ou por espaço/ponto-e-vírgula):</strong><br>
+          <code>POSTO ATUAL</code> &nbsp;|&nbsp;
+          <code>POSTO ÚLT. VOO</code> &nbsp;|&nbsp;
+          <code>NIP</code> &nbsp;|&nbsp;
+          <code>NOME COMPLETO</code> &nbsp;|&nbsp;
+          <code>OM ONDE SERVE</code> &nbsp;|&nbsp;
+          <code>MODELO ANV</code> &nbsp;|&nbsp;
+          <code>HORAS XY</code> &nbsp;|&nbsp;
+          <code>ÚLTIMO VOO</code>
+          <br>
+          <span style="font-size:0.78rem;">
+            • Se o militar voou <strong>2 ou mais modelos</strong>, você pode colocar os modelos extras na <strong>mesma linha</strong> (<code>MODELO2 HORAS2 DATA2</code>) OU em <strong>linhas separadas com o mesmo NIP</strong> — o sistema agrupa tudo em uma única FCIV!
+          </span>
+          <div class="code-example">CB	CB	15.0000.01	Fulano da Silva Sauro	ESQDHU-2	UH-12	13,1	23/12/2026	UH-17	5,3	05/06/2026
+SO	SO	99.1986.57	ALEX MENEZES	EsqdHU-61	UH-12	1	12/02/2025
+SO	SO	99.2057.42	MANOEL RUI NEY DO NASCIMENTO FILHO	EsqdHU-1	UH-12	85,7	03/12/2025
+SO	SO	99.2181.43	LUCIANO DUARTE DE MORAES	GAerNavMan	UH-12	1,4	26/06/2025</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="bulkTextarea">
+          Cole aqui a lista de militares (1 ou vários)
+          <button type="button" class="btn btn-outline btn-xs" onclick="fillExampleBulk()">Inserir Exemplo</button>
+        </label>
+        <textarea id="bulkTextarea" class="bulk-input" placeholder="Cole aqui as linhas da sua planilha ou digite seguindo a ordem acima..."></textarea>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <button type="button" class="btn btn-outline btn-sm" onclick="clearBulk()">Limpar Campo</button>
+        </div>
+        <div class="toolbar-group">
+          <button type="button" class="btn btn-navy" id="btnDownloadZip" onclick="downloadAllZip()" disabled>
+            &#128230; Baixar Todas em .ZIP
+          </button>
+          <button type="button" class="btn btn-success" id="btnDownloadAllOds" onclick="downloadAllIndividual()" disabled>
+            &#11015; Baixar Todas (.ods individuais)
+          </button>
+        </div>
+      </div>
+
+      <div id="parsedPreviewArea"></div>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+/* ============================================================================
+ * MODELO BASE NIP_Esqd_ANO.ods EMBUTIDO EM BASE64 (100% OFFLINE / SEM CORS)
+ * ============================================================================ */
+var EMBEDDED_TEMPLATE_B64 = "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";
+
+/* ============================================================================
+ * MOTOR ZIP / DEFLATE (RFC 1951 INFLATE EM JS PURO + ZIP READER/WRITER)
+ * ============================================================================ */
+var OdsZip = (function () {
+  var crcTable = new Uint32Array(256);
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var k = 0; k < 8; k++) {
+      c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+    }
+    crcTable[i] = c >>> 0;
+  }
+
+  function crc32(bytes) {
+    var crc = 0xffffffff;
+    for (var i = 0; i < bytes.length; i++) {
+      crc = crcTable[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xffffffff) >>> 0;
+  }
+
+  function base64ToUint8Array(b64) {
+    var bin = atob(b64);
+    var arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return arr;
+  }
+
+  function utf8Encode(str) {
+    if (typeof TextEncoder !== "undefined") return new TextEncoder().encode(str);
+    var utf8 = unescape(encodeURIComponent(str));
+    var out = new Uint8Array(utf8.length);
+    for (var i = 0; i < utf8.length; i++) out[i] = utf8.charCodeAt(i);
+    return out;
+  }
+
+  function utf8Decode(bytes) {
+    if (typeof TextDecoder !== "undefined") return new TextDecoder("utf-8").decode(bytes);
+    var bin = "";
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return decodeURIComponent(escape(bin));
+  }
+
+  var LEN_BASE = [3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+  var LEN_EXTRA = [0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+  var DIST_BASE = [1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+  var DIST_EXTRA = [0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+  var CL_ORDER = [16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+
+  function buildHuffTree(lengths) {
+    var maxBits = 0;
+    for (var i = 0; i < lengths.length; i++) if (lengths[i] > maxBits) maxBits = lengths[i];
+    var counts = new Int32Array(maxBits + 1);
+    for (var i = 0; i < lengths.length; i++) if (lengths[i] > 0) counts[lengths[i]]++;
+    var nextCode = new Int32Array(maxBits + 1);
+    var code = 0;
+    for (var bits = 1; bits <= maxBits; bits++) {
+      code = (code + counts[bits - 1]) << 1;
+      nextCode[bits] = code;
+    }
+    var root = { left: null, right: null, sym: -1 };
+    for (var sym = 0; sym < lengths.length; sym++) {
+      var len = lengths[sym];
+      if (len === 0) continue;
+      var c = nextCode[len]++;
+      var node = root;
+      for (var b = len - 1; b >= 0; b--) {
+        var bit = (c >>> b) & 1;
+        if (bit === 0) {
+          if (!node.left) node.left = { left: null, right: null, sym: -1 };
+          node = node.left;
+        } else {
+          if (!node.right) node.right = { left: null, right: null, sym: -1 };
+          node = node.right;
+        }
+      }
+      node.sym = sym;
+    }
+    return root;
+  }
+
+  var FIXED_LIT_TREE = (function () {
+    var l = new Uint8Array(288);
+    for (var i = 0; i <= 143; i++) l[i] = 8;
+    for (var i = 144; i <= 255; i++) l[i] = 9;
+    for (var i = 256; i <= 279; i++) l[i] = 7;
+    for (var i = 280; i <= 287; i++) l[i] = 8;
+    return buildHuffTree(l);
+  })();
+
+  var FIXED_DIST_TREE = (function () {
+    var d = new Uint8Array(32);
+    for (var i = 0; i < 32; i++) d[i] = 5;
+    return buildHuffTree(d);
+  })();
+
+  function inflateRaw(src) {
+    var pos = 0, bitBuf = 0, bitCnt = 0, out = [];
+    function ensureBits(n) {
+      while (bitCnt < n) {
+        if (pos >= src.length) throw new Error("Fim inesperado dos dados DEFLATE");
+        bitBuf |= src[pos++] << bitCnt;
+        bitCnt += 8;
+      }
+    }
+    function readBits(n) {
+      if (n === 0) return 0;
+      ensureBits(n);
+      var val = bitBuf & ((1 << n) - 1);
+      bitBuf >>>= n; bitCnt -= n;
+      return val;
+    }
+    function readHuff(tree) {
+      var node = tree;
+      while (node.sym === -1) {
+        ensureBits(1);
+        var bit = bitBuf & 1;
+        bitBuf >>>= 1; bitCnt -= 1;
+        node = bit === 0 ? node.left : node.right;
+        if (!node) throw new Error("Código Huffman inválido");
+      }
+      return node.sym;
+    }
+    var bfinal = 0;
+    do {
+      bfinal = readBits(1);
+      var btype = readBits(2);
+      if (btype === 0) {
+        bitBuf = 0; bitCnt = 0;
+        var len = src[pos] | (src[pos + 1] << 8);
+        var nlen = src[pos + 2] | (src[pos + 3] << 8);
+        pos += 4;
+        if ((len ^ 0xffff) !== nlen) throw new Error("Bloco DEFLATE stored corrompido");
+        for (var i = 0; i < len; i++) out.push(src[pos++]);
+      } else if (btype === 1 || btype === 2) {
+        var litTree, distTree;
+        if (btype === 1) {
+          litTree = FIXED_LIT_TREE; distTree = FIXED_DIST_TREE;
+        } else {
+          var hlit = readBits(5) + 257;
+          var hdist = readBits(5) + 1;
+          var hclen = readBits(4) + 4;
+          var clLengths = new Uint8Array(19);
+          for (var i = 0; i < hclen; i++) clLengths[CL_ORDER[i]] = readBits(3);
+          var clTree = buildHuffTree(clLengths);
+          var allLens = new Uint8Array(hlit + hdist);
+          var idx = 0;
+          while (idx < allLens.length) {
+            var sym = readHuff(clTree);
+            if (sym < 16) allLens[idx++] = sym;
+            else if (sym === 16) {
+              var rep = 3 + readBits(2), prev = allLens[idx - 1];
+              for (var r = 0; r < rep; r++) allLens[idx++] = prev;
+            } else if (sym === 17) {
+              var rep = 3 + readBits(3);
+              for (var r = 0; r < rep; r++) allLens[idx++] = 0;
+            } else {
+              var rep = 11 + readBits(7);
+              for (var r = 0; r < rep; r++) allLens[idx++] = 0;
+            }
+          }
+          litTree = buildHuffTree(allLens.subarray(0, hlit));
+          distTree = buildHuffTree(allLens.subarray(hlit));
+        }
+        while (true) {
+          var sym = readHuff(litTree);
+          if (sym < 256) out.push(sym);
+          else if (sym === 256) break;
+          else {
+            var lIdx = sym - 257;
+            var length = LEN_BASE[lIdx] + readBits(LEN_EXTRA[lIdx]);
+            var dSym = readHuff(distTree);
+            var dist = DIST_BASE[dSym] + readBits(DIST_EXTRA[dSym]);
+            for (var k = 0; k < length; k++) out.push(out[out.length - dist]);
+          }
+        }
+      } else {
+        throw new Error("BTYPE DEFLATE inválido: " + btype);
+      }
+    } while (!bfinal);
+    return new Uint8Array(out);
+  }
+
+  function u16(bytes, off) { return bytes[off] | (bytes[off + 1] << 8); }
+  function u32(bytes, off) {
+    return (bytes[off] | (bytes[off + 1] << 8) | (bytes[off + 2] << 16) | (bytes[off + 3] << 24)) >>> 0;
+  }
+
+  function readZip(zipBytes) {
+    var view = zipBytes instanceof Uint8Array ? zipBytes : new Uint8Array(zipBytes);
+    var eocdOffset = -1;
+    var minOff = Math.max(0, view.length - 65557);
+    for (var i = view.length - 22; i >= minOff; i--) {
+      if (view[i] === 0x50 && view[i + 1] === 0x4b && view[i + 2] === 0x05 && view[i + 3] === 0x06) {
+        eocdOffset = i; break;
+      }
+    }
+    if (eocdOffset === -1) throw new Error("Arquivo ZIP/ODS inválido (EOCD não encontrado).");
+    var totalEntries = u16(view, eocdOffset + 10);
+    var cdOffset = u32(view, eocdOffset + 16);
+    var entries = [];
+    var ptr = cdOffset;
+    for (var e = 0; e < totalEntries; e++) {
+      if (u32(view, ptr) !== 0x02014b50) throw new Error("Assinatura do Central Directory inválida.");
+      var method = u16(view, ptr + 10);
+      var modTime = u16(view, ptr + 12);
+      var modDate = u16(view, ptr + 14);
+      var crc = u32(view, ptr + 16);
+      var compSize = u32(view, ptr + 20);
+      var nameLen = u16(view, ptr + 28);
+      var extraLen = u16(view, ptr + 30);
+      var commentLen = u16(view, ptr + 32);
+      var extAttr = u32(view, ptr + 38);
+      var localOffset = u32(view, ptr + 42);
+      var name = utf8Decode(view.subarray(ptr + 46, ptr + 46 + nameLen));
+      ptr += 46 + nameLen + extraLen + commentLen;
+      if (u32(view, localOffset) !== 0x04034b50) throw new Error("Local File Header inválido para " + name);
+      var lhNameLen = u16(view, localOffset + 26);
+      var lhExtraLen = u16(view, localOffset + 28);
+      var dataStart = localOffset + 30 + lhNameLen + lhExtraLen;
+      var compData = view.subarray(dataStart, dataStart + compSize);
+      var data;
+      if (method === 0) data = new Uint8Array(compData);
+      else if (method === 8) data = inflateRaw(compData);
+      else throw new Error("Método de compressão ZIP não suportado: " + method);
+      entries.push({ name: name, data: data, method: method, modTime: modTime, modDate: modDate, extAttr: extAttr, crc: crc });
+    }
+    return entries;
+  }
+
+  function deflateWithStream(dataBytes) {
+    if (typeof CompressionStream === "undefined") return Promise.resolve({ method: 0, compressed: dataBytes });
+    try {
+      var cs = new CompressionStream("deflate-raw");
+      var writer = cs.writable.getWriter();
+      writer.write(dataBytes);
+      writer.close();
+      return new Response(cs.readable).arrayBuffer().then(function (buf) {
+        return { method: 8, compressed: new Uint8Array(buf) };
+      }).catch(function () {
+        return { method: 0, compressed: dataBytes };
+      });
+    } catch (e) {
+      return Promise.resolve({ method: 0, compressed: dataBytes });
+    }
+  }
+
+  function writeU16(arr, off, v) { arr[off] = v & 0xff; arr[off + 1] = (v >>> 8) & 0xff; }
+  function writeU32(arr, off, v) {
+    arr[off] = v & 0xff; arr[off + 1] = (v >>> 8) & 0xff;
+    arr[off + 2] = (v >>> 16) & 0xff; arr[off + 3] = (v >>> 24) & 0xff;
+  }
+
+  function buildZip(entries, compressEntries) {
+    var shouldCompress = compressEntries !== false;
+    var tasks = entries.map(function (entry) {
+      var raw = entry.data instanceof Uint8Array ? entry.data : utf8Encode(String(entry.data || ""));
+      var isMimetype = entry.name === "mimetype";
+      var isDir = entry.name.charAt(entry.name.length - 1) === "/" || raw.length === 0;
+      if (!shouldCompress || isMimetype || isDir) {
+        return Promise.resolve({
+          name: entry.name, raw: raw, compressed: raw, method: 0,
+          modTime: entry.modTime || 0, modDate: entry.modDate || 0x5421,
+          extAttr: entry.extAttr || (isDir ? 0x10 : 0)
+        });
+      }
+      return deflateWithStream(raw).then(function (res) {
+        return {
+          name: entry.name, raw: raw, compressed: res.compressed, method: res.method,
+          modTime: entry.modTime || 0, modDate: entry.modDate || 0x5421, extAttr: entry.extAttr || 0
+        };
+      });
+    });
+
+    return Promise.all(tasks).then(function (prepared) {
+      var localParts = [], cdParts = [], offset = 0;
+      for (var i = 0; i < prepared.length; i++) {
+        var item = prepared[i];
+        var nameBytes = utf8Encode(item.name);
+        var crcVal = crc32(item.raw);
+        var flags = item.name === "mimetype" ? 0 : 0x0800;
+
+        var lh = new Uint8Array(30 + nameBytes.length);
+        writeU32(lh, 0, 0x04034b50); writeU16(lh, 4, 20); writeU16(lh, 6, flags);
+        writeU16(lh, 8, item.method); writeU16(lh, 10, item.modTime); writeU16(lh, 12, item.modDate);
+        writeU32(lh, 14, crcVal); writeU32(lh, 18, item.compressed.length); writeU32(lh, 22, item.raw.length);
+        writeU16(lh, 26, nameBytes.length); writeU16(lh, 28, 0);
+        lh.set(nameBytes, 30);
+        localParts.push(lh); localParts.push(item.compressed);
+
+        var cd = new Uint8Array(46 + nameBytes.length);
+        writeU32(cd, 0, 0x02014b50); writeU16(cd, 4, 20); writeU16(cd, 6, 20);
+        writeU16(cd, 8, flags); writeU16(cd, 10, item.method); writeU16(cd, 12, item.modTime);
+        writeU16(cd, 14, item.modDate); writeU32(cd, 16, crcVal); writeU32(cd, 20, item.compressed.length);
+        writeU32(cd, 24, item.raw.length); writeU16(cd, 28, nameBytes.length);
+        writeU16(cd, 30, 0); writeU16(cd, 32, 0); writeU16(cd, 34, 0); writeU16(cd, 36, 0);
+        writeU32(cd, 38, item.extAttr); writeU32(cd, 42, offset);
+        cd.set(nameBytes, 46);
+        cdParts.push(cd);
+        offset += lh.length + item.compressed.length;
+      }
+      var cdSize = 0;
+      for (var i = 0; i < cdParts.length; i++) cdSize += cdParts[i].length;
+      var eocd = new Uint8Array(22);
+      writeU32(eocd, 0, 0x06054b50); writeU16(eocd, 4, 0); writeU16(eocd, 6, 0);
+      writeU16(eocd, 8, prepared.length); writeU16(eocd, 10, prepared.length);
+      writeU32(eocd, 12, cdSize); writeU32(eocd, 16, offset); writeU16(eocd, 20, 0);
+
+      var totalLen = offset + cdSize + 22;
+      var out = new Uint8Array(totalLen);
+      var p = 0;
+      for (var i = 0; i < localParts.length; i++) { out.set(localParts[i], p); p += localParts[i].length; }
+      for (var i = 0; i < cdParts.length; i++) { out.set(cdParts[i], p); p += cdParts[i].length; }
+      out.set(eocd, p);
+      return out;
+    });
+  }
+
+  return {
+    base64ToUint8Array: base64ToUint8Array, utf8Encode: utf8Encode, utf8Decode: utf8Decode,
+    readZip: readZip, buildZip: buildZip, inflateRaw: inflateRaw, crc32: crc32
+  };
+})();
+
+/* ============================================================================
+ * MANIPULADOR DE CONTEÚDO ODF (content.xml) DO MODELO NIP_Esqd_ANO.ods
+ * ============================================================================ */
+var FcivOdsEngine = (function () {
+  var NS = {
+    OFFICE: "urn:oasis:names:tc:opendocument:xmlns:office:1.0",
+    TABLE: "urn:oasis:names:tc:opendocument:xmlns:table:1.0",
+    TEXT: "urn:oasis:names:tc:opendocument:xmlns:text:1.0",
+    CALCEXT: "urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0"
+  };
+
+  function colToIndex(colLetters) {
+    var col = 0, s = colLetters.toUpperCase();
+    for (var i = 0; i < s.length; i++) col = col * 26 + (s.charCodeAt(i) - 64);
+    return col - 1;
+  }
+
+  function parseBrDate(str) {
+    if (!str) return null;
+    var s = String(str).trim();
+    var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) {
+      var d = parseInt(m[1], 10), mo = parseInt(m[2], 10), y = parseInt(m[3], 10);
+      if (d >= 1 && d <= 31 && mo >= 1 && mo <= 12 && y >= 1900 && y <= 2199) {
+        var dd = (d < 10 ? "0" : "") + d, mm = (mo < 10 ? "0" : "") + mo;
+        return { iso: y + "-" + mm + "-" + dd, br: dd + "/" + mm + "/" + y, sortKey: y * 10000 + mo * 100 + d };
+      }
+    }
+    var iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (iso) {
+      var y2 = parseInt(iso[1], 10), m2 = parseInt(iso[2], 10), d2 = parseInt(iso[3], 10);
+      var dd2 = (d2 < 10 ? "0" : "") + d2, mm2 = (m2 < 10 ? "0" : "") + m2;
+      return { iso: y2 + "-" + mm2 + "-" + dd2, br: dd2 + "/" + mm2 + "/" + y2, sortKey: y2 * 10000 + m2 * 100 + d2 };
+    }
+    return null;
+  }
+
+  function parseDecimal(val) {
+    if (val === null || val === undefined) return null;
+    var s = String(val).trim();
+    if (s === "") return null;
+    if (s.indexOf(",") !== -1 && s.indexOf(".") !== -1) s = s.replace(/\./g, "").replace(",", ".");
+    else s = s.replace(",", ".");
+    var n = Number(s);
+    return isFinite(n) ? n : null;
+  }
+
+  function formatPtNum(n, decimals) {
+    var fixed = decimals > 0 ? n.toFixed(decimals) : String(Math.round(n * 100) / 100);
+    return fixed.replace(".", ",");
+  }
+
+  function getDirectRows(tableEl) {
+    var rows = [];
+    for (var i = 0; i < tableEl.childNodes.length; i++) {
+      var ch = tableEl.childNodes[i];
+      if (ch.nodeType === 1 && ch.localName === "table-row") rows.push(ch);
+    }
+    return rows;
+  }
+
+  function getRowByNumber(tableEl, targetRowNum) {
+    var rows = getDirectRows(tableEl);
+    var cur = 1;
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var repAttr = r.getAttributeNS(NS.TABLE, "number-rows-repeated");
+      var rep = repAttr ? parseInt(repAttr, 10) : 1;
+      if (targetRowNum >= cur && targetRowNum < cur + rep) {
+        if (rep > 1) {
+          var offset = targetRowNum - cur, parent = r.parentNode;
+          if (offset > 0) {
+            var before = r.cloneNode(true);
+            before.setAttributeNS(NS.TABLE, "table:number-rows-repeated", String(offset));
+            parent.insertBefore(before, r);
+          }
+          var single = r.cloneNode(true);
+          single.removeAttributeNS(NS.TABLE, "number-rows-repeated");
+          parent.insertBefore(single, r);
+          var rem = rep - offset - 1;
+          if (rem > 0) r.setAttributeNS(NS.TABLE, "table:number-rows-repeated", String(rem));
+          else parent.removeChild(r);
+          return single;
+        }
+        return r;
+      }
+      cur += rep;
+    }
+    return null;
+  }
+
+  function expandRowCells(doc, rowEl, minCols) {
+    var cells = [], children = [];
+    for (var i = 0; i < rowEl.childNodes.length; i++) {
+      if (rowEl.childNodes[i].nodeType === 1) children.push(rowEl.childNodes[i]);
+    }
+    var col = 1;
+    for (var i = 0; i < children.length; i++) {
+      var cell = children[i];
+      var repAttr = cell.getAttributeNS(NS.TABLE, "number-columns-repeated");
+      var rep = repAttr ? parseInt(repAttr, 10) : 1;
+      if (col <= minCols && rep > 1) {
+        var take = Math.min(rep, minCols - col + 1);
+        for (var k = 0; k < take; k++) {
+          var clone = cell.cloneNode(true);
+          clone.removeAttributeNS(NS.TABLE, "number-columns-repeated");
+          rowEl.insertBefore(clone, cell);
+          cells.push(clone);
+        }
+        var rem = rep - take;
+        if (rem > 0) cell.setAttributeNS(NS.TABLE, "table:number-columns-repeated", String(rem));
+        else rowEl.removeChild(cell);
+        col += take;
+      } else {
+        if (col <= minCols) cells.push(cell);
+        col += rep;
+      }
+    }
+    return cells;
+  }
+
+  function clearCellContent(cellEl) {
+    cellEl.removeAttributeNS(NS.OFFICE, "value-type");
+    cellEl.removeAttributeNS(NS.OFFICE, "value");
+    cellEl.removeAttributeNS(NS.OFFICE, "date-value");
+    cellEl.removeAttributeNS(NS.OFFICE, "string-value");
+    cellEl.removeAttributeNS(NS.CALCEXT, "value-type");
+    cellEl.removeAttributeNS(NS.TABLE, "formula");
+    var toRemove = [];
+    for (var i = 0; i < cellEl.childNodes.length; i++) {
+      var ch = cellEl.childNodes[i];
+      if (ch.nodeType === 1 && ch.localName === "p") toRemove.push(ch);
+    }
+    for (var i = 0; i < toRemove.length; i++) cellEl.removeChild(toRemove[i]);
+  }
+
+  function setCellString(doc, cellEl, text) {
+    clearCellContent(cellEl);
+    var val = text == null ? "" : String(text);
+    if (val === "") return;
+    cellEl.setAttributeNS(NS.OFFICE, "office:value-type", "string");
+    cellEl.setAttributeNS(NS.CALCEXT, "calcext:value-type", "string");
+    var p = doc.createElementNS(NS.TEXT, "text:p");
+    p.textContent = val;
+    cellEl.appendChild(p);
+  }
+
+  function setCellDate(doc, cellEl, dateInput) {
+    clearCellContent(cellEl);
+    if (!dateInput || !String(dateInput).trim()) return;
+    var parsed = parseBrDate(dateInput);
+    if (parsed) {
+      cellEl.setAttributeNS(NS.OFFICE, "office:value-type", "date");
+      cellEl.setAttributeNS(NS.OFFICE, "office:date-value", parsed.iso);
+      cellEl.setAttributeNS(NS.CALCEXT, "calcext:value-type", "date");
+      var p = doc.createElementNS(NS.TEXT, "text:p");
+      p.textContent = parsed.br;
+      cellEl.appendChild(p);
+    } else {
+      setCellString(doc, cellEl, dateInput);
+    }
+  }
+
+  function setCellNumber(doc, cellEl, num, decimals) {
+    clearCellContent(cellEl);
+    if (num === null || num === undefined || !isFinite(num)) return;
+    cellEl.setAttributeNS(NS.OFFICE, "office:value-type", "float");
+    cellEl.setAttributeNS(NS.OFFICE, "office:value", String(Math.round(num * 10000) / 10000));
+    cellEl.setAttributeNS(NS.CALCEXT, "calcext:value-type", "float");
+    var p = doc.createElementNS(NS.TEXT, "text:p");
+    p.textContent = formatPtNum(num, decimals);
+    cellEl.appendChild(p);
+  }
+
+  function setCellFormula(doc, cellEl, formula, cachedNum, displayText, isError) {
+    clearCellContent(cellEl);
+    cellEl.setAttributeNS(NS.TABLE, "table:formula", formula);
+    if (isError) {
+      cellEl.setAttributeNS(NS.OFFICE, "office:value-type", "string");
+      cellEl.setAttributeNS(NS.OFFICE, "office:string-value", "");
+      cellEl.setAttributeNS(NS.CALCEXT, "calcext:value-type", "error");
+      var pe = doc.createElementNS(NS.TEXT, "text:p");
+      pe.textContent = displayText || "#DIV/0!";
+      cellEl.appendChild(pe);
+      return;
+    }
+    cellEl.setAttributeNS(NS.OFFICE, "office:value-type", "float");
+    cellEl.setAttributeNS(NS.OFFICE, "office:value", String(Math.round(cachedNum * 1000000) / 1000000));
+    cellEl.setAttributeNS(NS.CALCEXT, "calcext:value-type", "float");
+    var p = doc.createElementNS(NS.TEXT, "text:p");
+    p.textContent = displayText;
+    cellEl.appendChild(p);
+  }
+
+  function setCellByCol(doc, rowEl, colLetter, kind, value, extraDecimals) {
+    var cells = expandRowCells(doc, rowEl, 30);
+    var cell = cells[colToIndex(colLetter)];
+    if (!cell) return;
+    if (kind === "string") setCellString(doc, cell, value);
+    else if (kind === "date") setCellDate(doc, cell, value);
+    else if (kind === "number") setCellNumber(doc, cell, value, extraDecimals || 0);
+    else if (kind === "clear") clearCellContent(cell);
+  }
+
+  function getCellText(cellEl) {
+    if (!cellEl) return "";
+    var out = [];
+    for (var i = 0; i < cellEl.childNodes.length; i++) {
+      var ch = cellEl.childNodes[i];
+      if (ch.nodeType === 1 && ch.localName === "p") out.push(ch.textContent || "");
+    }
+    return out.join(" ").trim();
+  }
+
+  function findAircraftBlocksStart(tableEl) {
+    var rows = getDirectRows(tableEl), cur = 1, motorRows = [];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var repAttr = r.getAttributeNS(NS.TABLE, "number-rows-repeated");
+      var rep = repAttr ? parseInt(repAttr, 10) : 1;
+      if (cur >= 12 && cur <= 25 && rep === 1) {
+        var firstCell = null;
+        for (var j = 0; j < r.childNodes.length; j++) {
+          if (r.childNodes[j].nodeType === 1) { firstCell = r.childNodes[j]; break; }
+        }
+        if (getCellText(firstCell).toUpperCase().indexOf("TIPO DE MOTOR") !== -1) motorRows.push(i);
+      }
+      cur += rep;
+    }
+    return motorRows.length >= 2 ? { block1Idx: motorRows[0], block2Idx: motorRows[1] } : { block1Idx: 13, block2Idx: 17 };
+  }
+
+  function buildContentXml(templateXmlStr, cfg, militar) {
+    var doc = new DOMParser().parseFromString(templateXmlStr, "application/xml");
+    var parseErr = doc.getElementsByTagName("parsererror");
+    if (parseErr && parseErr.length > 0) throw new Error("Erro ao interpretar content.xml do modelo .ods.");
+    var tables = doc.getElementsByTagNameNS(NS.TABLE, "table");
+    if (!tables || tables.length === 0) throw new Error("Planilha não encontrada no content.xml.");
+    var sheet = tables[0];
+
+    var modelos = (militar.modelos && militar.modelos.length > 0) ? militar.modelos : [{ tipoMotor: "", modeloAnv: "" }];
+    var nModelos = modelos.length;
+    var delta = 4 * (nModelos - 2);
+
+    var rowsList = getDirectRows(sheet);
+    var pos = findAircraftBlocksStart(sheet);
+    var block2Template = [
+      rowsList[pos.block2Idx], rowsList[pos.block2Idx + 1],
+      rowsList[pos.block2Idx + 2], rowsList[pos.block2Idx + 3]
+    ];
+    var afterBlock2 = rowsList[pos.block2Idx + 4];
+
+    if (nModelos === 1) {
+      for (var k = 0; k < 4; k++) sheet.removeChild(block2Template[k]);
+    } else if (nModelos > 2) {
+      for (var m = 2; m < nModelos; m++) {
+        for (var k = 0; k < 4; k++) sheet.insertBefore(block2Template[k].cloneNode(true), afterBlock2);
+      }
+    }
+
+    var anoStr = String(cfg.ano || "").trim();
+    var row7 = getRowByNumber(sheet, 7), row8 = getRowByNumber(sheet, 8), row9 = getRowByNumber(sheet, 9);
+
+    setCellByCol(doc, row7, "B", "string", militar.postoGrad || "");
+    setCellByCol(doc, row8, "B", "string", militar.nip || "");
+    setCellByCol(doc, row9, "B", "string", militar.nome || "");
+
+    if (/^\d{4}$/.test(anoStr)) {
+      setCellByCol(doc, row7, "N", "date", "01/01/" + anoStr);
+      setCellByCol(doc, row8, "N", "date", "31/12/" + anoStr);
+    } else {
+      setCellByCol(doc, row7, "N", "string", "");
+      setCellByCol(doc, row8, "N", "string", "");
+    }
+
+    setCellByCol(doc, row9, "N", "date", militar.dataUltVoo || "");
+    setCellByCol(doc, row7, "AA", "string", cfg.omVoou || "");
+    setCellByCol(doc, row8, "AA", "string", militar.omServe || "");
+    setCellByCol(doc, row9, "AA", "string", militar.postoUltVoo || "");
+
+    var hourCols = ["B","C","D","E","F","G","H","I","J","K","M","O","P","Q","R","S"];
+    var intCols  = ["U","V","W","X","Z","AA","AC","AD"];
+    var allSumCols = hourCols.concat(intCols);
+    var colTotals = {};
+    for (var i = 0; i < allSumCols.length; i++) colTotals[allSumCols[i]] = 0;
+
+    for (var idx = 0; idx < nModelos; idx++) {
+      var mod = modelos[idx];
+      var rMotorNum = 14 + idx * 4;
+      var rMotor = getRowByNumber(sheet, rMotorNum);
+      var rHeader = getRowByNumber(sheet, rMotorNum + 2);
+      var rData = getRowByNumber(sheet, rMotorNum + 3);
+
+      setCellByCol(doc, rMotor, "A", "string", mod.tipoMotor || "");
+      setCellByCol(doc, rHeader, "A", "string", mod.modeloAnv || "");
+      setCellByCol(doc, rData, "A", "string", mod.modeloAnv || "");
+
+      var dataCells = expandRowCells(doc, rData, 30);
+      for (var c = 1; c < 30; c++) clearCellContent(dataCells[c]);
+
+      setCellByCol(doc, rData, "L", "date", mod.dataUltVoo || "");
+
+      var valK = parseDecimal(mod.xy);
+      if (valK !== null) {
+        setCellByCol(doc, rData, "K", "number", valK, 1);
+        colTotals["K"] += valK;
+      }
+
+      if (cfg.mode === "PILOTO") {
+        var mapPilotoHoras = {
+          B: mod.h1p, C: mod.h2p, D: mod.al, E: mod.inH, F: mod.ivH,
+          G: mod.ptm, H: mod.pee, I: mod.mecVoo, J: mod.fielAnv,
+          M: mod.simulador, O: mod.tipo1, P: mod.tipo2, Q: mod.tipo3, R: mod.tipo4D, S: mod.tipo4N
+        };
+        Object.keys(mapPilotoHoras).forEach(function (colL) {
+          var numH = parseDecimal(mapPilotoHoras[colL]);
+          if (numH !== null) {
+            setCellByCol(doc, rData, colL, "number", numH, 1);
+            colTotals[colL] += numH;
+          }
+        });
+
+        var mapPilotoInt = {
+          U: mod.pousoNavioD, V: mod.pousoNavioN, W: mod.pousoTerraD, X: mod.pousoTerraN,
+          Z: mod.cmdOn, AA: mod.copOn, AC: mod.cmdOff, AD: mod.copOff
+        };
+        Object.keys(mapPilotoInt).forEach(function (colP) {
+          var numP = parseDecimal(mapPilotoInt[colP]);
+          if (numP !== null) {
+            var dec = (Math.abs(numP - Math.round(numP)) < 1e-6) ? 0 : 1;
+            setCellByCol(doc, rData, colP, "number", numP, dec);
+            colTotals[colP] += numP;
+          }
+        });
+      }
+    }
+
+    var lastDataRow = 14 + (nModelos - 1) * 4 + 3;
+    var sepRow = lastDataRow + 1;
+    var r23 = 23 + delta, r24 = 24 + delta, r26 = 26 + delta, r27 = 27 + delta;
+    var r29 = 29 + delta, r30 = 30 + delta, r31 = 31 + delta, r32 = 32 + delta;
+
+    var cells23 = expandRowCells(doc, getRowByNumber(sheet, r23), 30);
+    ["Z", "AA", "AC", "AD"].forEach(function (col) {
+      var tot = colTotals[col];
+      var dec = (Math.abs(tot - Math.round(tot)) < 1e-6) ? 0 : 1;
+      setCellFormula(doc, cells23[colToIndex(col)], "of:=SUM([." + col + "16:." + col + lastDataRow + "])", tot, formatPtNum(tot, dec), false);
+    });
+
+    var cells24 = expandRowCells(doc, getRowByNumber(sheet, r24), 30);
+    ["B","C","D","E","F","G","H","I","J","K","M"].forEach(function (col) {
+      var tot = colTotals[col];
+      setCellFormula(doc, cells24[colToIndex(col)], "of:=SUM([." + col + "16:." + col + sepRow + "])", tot, formatPtNum(tot, 1), false);
+    });
+
+    var totalHorasGeral = 0;
+    ["B","C","D","E","F","G","H","I","J","K"].forEach(function (col) { totalHorasGeral += colTotals[col]; });
+    setCellFormula(
+      doc, cells24[colToIndex("L")],
+      "of:=[.B" + r24 + "]+[.C" + r24 + "]+[.D" + r24 + "]+[.E" + r24 + "]+[.F" + r24 + "]+[.G" + r24 + "]+[.H" + r24 + "]+[.I" + r24 + "]+[.J" + r24 + "]+[.K" + r24 + "]",
+      totalHorasGeral, formatPtNum(totalHorasGeral, 1), false
+    );
+
+    ["O","P","Q","R","S"].forEach(function (col) {
+      var tot = colTotals[col];
+      setCellFormula(doc, cells24[colToIndex(col)], "of:=SUM([." + col + "16:." + col + lastDataRow + "])", tot, formatPtNum(tot, 1), false);
+    });
+
+    ["U","V","W","X"].forEach(function (col) {
+      var tot = colTotals[col];
+      var dec = (Math.abs(tot - Math.round(tot)) < 1e-6) ? 0 : 1;
+      setCellFormula(doc, cells24[colToIndex(col)], "of:=SUM([." + col + "16:." + col + lastDataRow + "])", tot, formatPtNum(tot, dec), false);
+    });
+
+    var totOnshore = colTotals["Z"] + colTotals["AA"], totOffshore = colTotals["AC"] + colTotals["AD"];
+    setCellFormula(doc, cells24[colToIndex("AA")], "of:=SUM([.Z" + r23 + ":.AA" + r23 + "])", totOnshore, formatPtNum(totOnshore, (Math.abs(totOnshore - Math.round(totOnshore)) < 1e-6) ? 0 : 1), false);
+    setCellFormula(doc, cells24[colToIndex("AD")], "of:=SUM([.AC" + r23 + ":.AD" + r23 + "])", totOffshore, formatPtNum(totOffshore, (Math.abs(totOffshore - Math.round(totOffshore)) < 1e-6) ? 0 : 1), false);
+
+    var cells26 = expandRowCells(doc, getRowByNumber(sheet, r26), 30);
+    var totMenosMec = colTotals["B"] + colTotals["C"] + colTotals["D"] + colTotals["E"] + colTotals["F"] + colTotals["G"] + colTotals["H"];
+    setCellFormula(doc, cells26[colToIndex("L")], "of:=[.B" + r24 + "]+[.C" + r24 + "]+[.D" + r24 + "]+[.E" + r24 + "]+[.F" + r24 + "]+[.G" + r24 + "]+[.H" + r24 + "]", totMenosMec, formatPtNum(totMenosMec, 1), false);
+
+    var cells27 = expandRowCells(doc, getRowByNumber(sheet, r27), 30);
+    var totInstrucao = colTotals["E"] + colTotals["F"];
+    setCellFormula(doc, cells27[colToIndex("L")], "of:=[.E" + r24 + "]+[.F" + r24 + "]", totInstrucao, formatPtNum(totInstrucao, 1), false);
+
+    var navioDia = colTotals["U"], navioNoite = colTotals["V"], terraDia = colTotals["W"], terraNoite = colTotals["X"];
+    var navioTot = navioDia + navioNoite, terraTot = terraDia + terraNoite, pousosGeral = navioTot + terraTot;
+    function fmtPct(part, total) { return ((part / total) * 100).toFixed(2).replace(".", ",") + "%"; }
+
+    var cells29 = expandRowCells(doc, getRowByNumber(sheet, r29), 30);
+    setCellFormula(doc, cells29[colToIndex("X")], "of:=[.U" + r24 + "]", navioDia, formatPtNum(navioDia, 0), false);
+    setCellFormula(doc, cells29[colToIndex("Z")], "of:=[.X" + r29 + "]/[.$AA$" + r32 + "]", pousosGeral > 0 ? navioDia / pousosGeral : 0, pousosGeral > 0 ? fmtPct(navioDia, pousosGeral) : "#DIV/0!", pousosGeral === 0);
+    setCellFormula(doc, cells29[colToIndex("AA")], "of:=[.W" + r24 + "]", terraDia, formatPtNum(terraDia, 0), false);
+    setCellFormula(doc, cells29[colToIndex("AC")], "of:=[.AA" + r29 + "]/[.$AA$" + r32 + "]", pousosGeral > 0 ? terraDia / pousosGeral : 0, pousosGeral > 0 ? fmtPct(terraDia, pousosGeral) : "#DIV/0!", pousosGeral === 0);
+
+    var cells30 = expandRowCells(doc, getRowByNumber(sheet, r30), 30);
+    setCellFormula(doc, cells30[colToIndex("X")], "of:=[.V" + r24 + "]", navioNoite, formatPtNum(navioNoite, 0), false);
+    setCellFormula(doc, cells30[colToIndex("Z")], "of:=[.X" + r30 + "]/[.$AA$" + r32 + "]", pousosGeral > 0 ? navioNoite / pousosGeral : 0, pousosGeral > 0 ? fmtPct(navioNoite, pousosGeral) : "#DIV/0!", pousosGeral === 0);
+    setCellFormula(doc, cells30[colToIndex("AA")], "of:=[.X" + r24 + "]", terraNoite, formatPtNum(terraNoite, 0), false);
+    setCellFormula(doc, cells30[colToIndex("AC")], "of:=[.AA" + r30 + "]/[.$AA$" + r32 + "]", pousosGeral > 0 ? terraNoite / pousosGeral : 0, pousosGeral > 0 ? fmtPct(terraNoite, pousosGeral) : "#DIV/0!", pousosGeral === 0);
+
+    var cells31 = expandRowCells(doc, getRowByNumber(sheet, r31), 30);
+    setCellFormula(doc, cells31[colToIndex("X")], "of:=SUM([.X" + r29 + ":.X" + r30 + "])", navioTot, formatPtNum(navioTot, 0), false);
+    setCellFormula(doc, cells31[colToIndex("Z")], "of:=[.X" + r31 + "]/[.$AA$" + r32 + "]", pousosGeral > 0 ? navioTot / pousosGeral : 0, pousosGeral > 0 ? fmtPct(navioTot, pousosGeral) : "#DIV/0!", pousosGeral === 0);
+    setCellFormula(doc, cells31[colToIndex("AA")], "of:=SUM([.AA" + r29 + ":.AA" + r30 + "])", terraTot, formatPtNum(terraTot, 0), false);
+    setCellFormula(doc, cells31[colToIndex("AC")], "of:=[.AA" + r31 + "]/[.$AA$" + r32 + "]", pousosGeral > 0 ? terraTot / pousosGeral : 0, pousosGeral > 0 ? fmtPct(terraTot, pousosGeral) : "#DIV/0!", pousosGeral === 0);
+
+    var cells32 = expandRowCells(doc, getRowByNumber(sheet, r32), 30);
+    setCellFormula(doc, cells32[colToIndex("AA")], "of:=SUM([.X" + r31 + "];[.AA" + r31 + "])", pousosGeral, formatPtNum(pousosGeral, 0), false);
+
+    setCellByCol(doc, getRowByNumber(sheet, 41 + delta), "N", "string", cfg.encNome || "");
+    setCellByCol(doc, getRowByNumber(sheet, 42 + delta), "N", "string", cfg.encPatente || "");
+
+    var xmlOut = new XMLSerializer().serializeToString(doc);
+    if (xmlOut.indexOf("<?xml") !== 0) xmlOut = '<?xml version="1.0" encoding="UTF-8"?>\n' + xmlOut;
+    return xmlOut;
+  }
+
+  function generateOdsBytes(templateEntries, cfg, militar) {
+    var updatedEntries = templateEntries.map(function (entry) {
+      if (entry.name === "content.xml") {
+        var origXml = OdsZip.utf8Decode(entry.data);
+        var newXml = buildContentXml(origXml, cfg, militar);
+        return {
+          name: entry.name, data: OdsZip.utf8Encode(newXml),
+          modTime: entry.modTime, modDate: entry.modDate, extAttr: entry.extAttr
+        };
+      }
+      return entry;
+    });
+    return OdsZip.buildZip(updatedEntries, true);
+  }
+
+  return {
+    parseBrDate: parseBrDate, parseDecimal: parseDecimal, formatPtNum: formatPtNum,
+    buildContentXml: buildContentXml, generateOdsBytes: generateOdsBytes
+  };
+})();
+
+/* ============================================================================
+ * ESTADO DA APLICAÇÃO, PARSER INTELIGENTE E INTERFACE OBJETIVA
+ * ============================================================================ */
+var STORAGE_KEY = "fciv_generator_state_v2";
+var templateEntries = [];
+var parsedMilitares = [];
+
+var state = {
+  cfg: {
+    mode: "XY",
+    omVoou: "ESQDHU-1",
+    ano: "2026",
+    encNome: "",
+    encPatente: "",
+    anvRules: [
+      { modelo: "UH-12", motor: "MONOMOTOR" },
+      { modelo: "UH-17", motor: "MONOMOTOR" },
+      { modelo: "UH-15", motor: "BIMOTOR" },
+      { modelo: "SH-16", motor: "BIMOTOR" }
+    ]
+  },
+  bulkText: ""
+};
+
+function showToast(msg, type) {
+  var el = document.getElementById("toastEl");
+  el.textContent = msg;
+  el.className = "toast show " + (type || "");
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function () { el.className = "toast"; }, 3500);
+}
+
+function escAttr(str) {
+  return String(str == null ? "" : str)
+    .replace(/&/g, "&amp;").replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function sanitizeFilenamePart(str, fallback) {
+  var s = String(str || "").trim();
+  return s ? s.replace(/[\\/:*?"<>|]/g, "_") : (fallback || "SEM_DADO");
+}
+
+function getOutputFilename(militar) {
+  return sanitizeFilenamePart(militar.nip, "NIP") + "_" +
+         sanitizeFilenamePart(state.cfg.omVoou, "ESQD") + "_" +
+         sanitizeFilenamePart(state.cfg.ano, "ANO") + ".ods";
+}
+
+function lookupTipoMotor(modeloAnv) {
+  var m = String(modeloAnv || "").trim().toUpperCase();
+  if (!m) return "";
+  for (var i = 0; i < state.cfg.anvRules.length; i++) {
+    if (String(state.cfg.anvRules[i].modelo || "").trim().toUpperCase() === m) {
+      return state.cfg.anvRules[i].motor || "";
+    }
+  }
+  return "";
+}
+
+function saveStateLocal() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+function loadStateLocal() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (parsed && parsed.cfg) {
+        state = parsed;
+        if (!state.cfg.anvRules) state.cfg.anvRules = [];
+      }
+    }
+  } catch (e) {}
+}
+
+function setMode(mode) {
+  state.cfg.mode = mode;
+  document.getElementById("btnModeXY").className = "mode-btn" + (mode === "XY" ? " active" : "");
+  document.getElementById("btnModePiloto").className = "mode-btn" + (mode === "PILOTO" ? " active" : "");
+  saveStateLocal();
+}
+
+function renderAnvRules() {
+  var container = document.getElementById("anvRulesList");
+  var html = "";
+  for (var i = 0; i < state.cfg.anvRules.length; i++) {
+    var rule = state.cfg.anvRules[i];
+    html += '<div class="anv-item">';
+    html += '  <input type="text" value="' + escAttr(rule.modelo) + '" placeholder="Ex: UH-12" oninput="updateAnvRule(' + i + ', \'modelo\', this.value)">';
+    html += '  <select onchange="updateAnvRule(' + i + ', \'motor\', this.value)">';
+    html += '    <option value="MONOMOTOR"' + (rule.motor === "MONOMOTOR" ? " selected" : "") + '>Monomotor</option>';
+    html += '    <option value="BIMOTOR"' + (rule.motor === "BIMOTOR" ? " selected" : "") + '>Bimotor</option>';
+    html += '    <option value="TURBOEIXO"' + (rule.motor === "TURBOEIXO" ? " selected" : "") + '>Turboeixo</option>';
+    html += '    <option value="TURBOÉLICE"' + (rule.motor === "TURBOÉLICE" ? " selected" : "") + '>Turboélice</option>';
+    html += '    <option value="REAÇÃO"' + (rule.motor === "REAÇÃO" ? " selected" : "") + '>Reação / Jato</option>';
+    html += '    <option value="PISTÃO"' + (rule.motor === "PISTÃO" ? " selected" : "") + '>Pistão</option>';
+    html += '  </select>';
+    html += '  <button type="button" class="btn btn-danger-outline btn-xs" onclick="removeAnvRule(' + i + ')" title="Remover">✕</button>';
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function addAnvRule() {
+  state.cfg.anvRules.push({ modelo: "", motor: "MONOMOTOR" });
+  saveStateLocal();
+  renderAnvRules();
+}
+
+function removeAnvRule(idx) {
+  state.cfg.anvRules.splice(idx, 1);
+  saveStateLocal();
+  renderAnvRules();
+  parseAndRenderBulk();
+}
+
+function updateAnvRule(idx, field, val) {
+  if (!state.cfg.anvRules[idx]) return;
+  state.cfg.anvRules[idx][field] = field === "modelo" ? val.toUpperCase() : val;
+  saveStateLocal();
+  parseAndRenderBulk();
+}
+
+/* ============================================================================
+ * PARSER INTELIGENTE DE LINHAS EM LOTE
+ * Ordem: POSTO ATUAL | POSTO ULT VOO | NIP | NOME COMPLETO | OM SERVE | MODELO | HORAS XY | ULT VOO [+ MODELO2 HORAS2 DATA2 ...]
+ * ============================================================================ */
+function computeMaxDateForMilitar(militar) {
+  var best = null;
+  for (var i = 0; i < militar.modelos.length; i++) {
+    var parsed = FcivOdsEngine.parseBrDate(militar.modelos[i].dataUltVoo);
+    if (parsed && (!best || parsed.sortKey > best.sortKey)) best = parsed;
+  }
+  return best ? best.br : "";
+}
+
+function isDateToken(tok) {
+  return /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(tok) || /^\d{4}-\d{1,2}-\d{1,2}$/.test(tok);
+}
+
+function isHoursToken(tok) {
+  return /^\d+(?:[.,]\d+)?$/.test(tok);
+}
+
+function parseSingleLineTokens(line) {
+  // Se tiver TAB ou ponto-e-vírgula, divide diretamente em colunas
+  if (line.indexOf("\t") !== -1) {
+    return line.split("\t").map(function (s) { return s.trim(); }).filter(function (s, idx, arr) {
+      return !(idx === arr.length - 1 && s === "");
+    });
+  }
+  if (line.indexOf(";") !== -1) {
+    return line.split(";").map(function (s) { return s.trim(); });
+  }
+
+  // Separado por espaços (como digitado manualmente):
+  // POSTO_ATUAL  POSTO_ULT  NIP  <NOME COMPLETO ...>  OM_SERVE  MODELO1  HORAS1  DATA1  [MODELO2 HORAS2 DATA2 ...]
+  var words = line.trim().split(/\s+/);
+  if (words.length < 8) return null;
+
+  var postoAtual = words[0];
+  var postoUlt = words[1];
+  var nip = words[2];
+
+  // Encontra todos os blocos (MODELO, HORAS, DATA) de trás para frente
+  var modelsReversed = [];
+  var endIdx = words.length;
+  while (endIdx - 3 >= 4) {
+    var dTok = words[endIdx - 1];
+    var hTok = words[endIdx - 2];
+    var mTok = words[endIdx - 3];
+    if (isDateToken(dTok) && isHoursToken(hTok)) {
+      modelsReversed.push({ modelo: mTok, horas: hTok, data: dTok });
+      endIdx -= 3;
+    } else {
+      break;
+    }
+  }
+  if (modelsReversed.length === 0) return null;
+
+  var omServe = words[endIdx - 1];
+  var nome = words.slice(3, endIdx - 1).join(" ");
+  var cols = [postoAtual, postoUlt, nip, nome, omServe];
+  for (var i = modelsReversed.length - 1; i >= 0; i--) {
+    cols.push(modelsReversed[i].modelo, modelsReversed[i].horas, modelsReversed[i].data);
+  }
+  return cols;
+}
+
+function parseBulkLines(text) {
+  var lines = String(text || "").split(/\r?\n/).filter(function (l) { return l.trim() !== ""; });
+  var byKey = {};
+  var order = [];
+
+  for (var i = 0; i < lines.length; i++) {
+    var cols = parseSingleLineTokens(lines[i]);
+    if (!cols || cols.length < 8) continue;
+
+    // Ignora linha de cabeçalho se colada por engano
+    var c0 = cols[0].toUpperCase();
+    if (i === 0 && (c0.indexOf("POSTO") !== -1 || c0 === "NIP")) continue;
+
+    var postoGrad = cols[0] || "";
+    var postoUltVoo = cols[1] || "";
+    var nip = cols[2] || "";
+    var nome = cols[3] || "";
+    var omServe = cols[4] || "";
+
+    var key = nip ? ("NIP:" + nip.replace(/\s+/g, "")) : ("NOME:" + nome.toUpperCase());
+    if (!byKey[key]) {
+      byKey[key] = {
+        postoGrad: postoGrad,
+        postoUltVoo: postoUltVoo,
+        nip: nip,
+        nome: nome,
+        omServe: omServe,
+        dataUltVoo: "",
+        modelos: []
+      };
+      order.push(key);
+    }
+
+    // Lê trios (MODELO, HORAS, DATA) a partir do índice 5
+    for (var k = 5; k + 2 < cols.length; k += 3) {
+      var modName = (cols[k] || "").trim();
+      var horas = (cols[k + 1] || "").trim();
+      var dtRaw = (cols[k + 2] || "").trim();
+      if (!modName && !horas && !dtRaw) continue;
+      var parsedDt = FcivOdsEngine.parseBrDate(dtRaw);
+      byKey[key].modelos.push({
+        tipoMotor: lookupTipoMotor(modName),
+        modeloAnv: modName,
+        xy: horas,
+        dataUltVoo: parsedDt ? parsedDt.br : dtRaw
+      });
+    }
+  }
+
+  return order.map(function (k) {
+    var mil = byKey[k];
+    mil.dataUltVoo = computeMaxDateForMilitar(mil);
+    return mil;
+  });
+}
+
+function parseAndRenderBulk() {
+  state.bulkText = document.getElementById("bulkTextarea").value;
+  saveStateLocal();
+
+  parsedMilitares = parseBulkLines(state.bulkText);
+  var badge = document.getElementById("parsedCountBadge");
+  badge.textContent = parsedMilitares.length + (parsedMilitares.length === 1 ? " FCIV pronta" : " FCIVs prontas");
+
+  var hasItems = parsedMilitares.length > 0;
+  document.getElementById("btnDownloadZip").disabled = !hasItems;
+  document.getElementById("btnDownloadAllOds").disabled = !hasItems;
+
+  var area = document.getElementById("parsedPreviewArea");
+  if (!hasItems) {
+    area.innerHTML = "";
+    return;
+  }
+
+  var html = '<table class="preview-table">';
+  html += '<thead><tr><th>#</th><th>Posto / Ult</th><th>NIP</th><th>Nome Completo</th><th>OM Serve (AA8)</th><th>Últ. Voo (N9)</th><th>Aeronaves (Motor automático)</th><th>Arquivo</th><th>Ação</th></tr></thead><tbody>';
+
+  for (var i = 0; i < parsedMilitares.length; i++) {
+    var m = parsedMilitares[i];
+    var modsHtml = "";
+    for (var j = 0; j < m.modelos.length; j++) {
+      var md = m.modelos[j];
+      var motorLabel = md.tipoMotor ? md.tipoMotor : "Sem motor cadastrado";
+      modsHtml += '<span class="badge-model">' + escAttr(md.modeloAnv) + ' (' + escAttr(motorLabel) + ') • ' + escAttr(md.xy) + 'h • ' + escAttr(md.dataUltVoo) + '</span>';
+    }
+    html += '<tr>';
+    html += '<td><strong>' + (i + 1) + '</strong></td>';
+    html += '<td>' + escAttr(m.postoGrad) + ' / ' + escAttr(m.postoUltVoo) + '</td>';
+    html += '<td>' + escAttr(m.nip) + '</td>';
+    html += '<td><strong>' + escAttr(m.nome) + '</strong></td>';
+    html += '<td>' + escAttr(m.omServe) + '</td>';
+    html += '<td>' + escAttr(m.dataUltVoo) + '</td>';
+    html += '<td>' + modsHtml + '</td>';
+    html += '<td><span class="filename-pill">' + escAttr(getOutputFilename(m)) + '</span></td>';
+    html += '<td><button type="button" class="btn btn-success btn-xs" onclick="downloadSingleByIndex(' + i + ')">&#11015; .ods</button></td>';
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  area.innerHTML = html;
+}
+
+function fillExampleBulk() {
+  document.getElementById("bulkTextarea").value =
+    "CB\tCB\t15.0000.01\tFulano da Silva Sauro\tESQDHU-2\tUH-12\t13,1\t23/12/2026\tUH-17\t5,3\t05/06/2026\n" +
+    "SO\tSO\t99.1986.57\tALEX MENEZES\tEsqdHU-61\tUH-12\t1\t12/02/2025\n" +
+    "SO\tSO\t99.2057.42\tMANOEL RUI NEY DO NASCIMENTO FILHO\tEsqdHU-1\tUH-12\t85,7\t03/12/2025\n" +
+    "SO\tSO\t99.2181.43\tLUCIANO DUARTE DE MORAES\tGAerNavMan\tUH-12\t1,4\t26/06/2025";
+  parseAndRenderBulk();
+}
+
+function clearBulk() {
+  document.getElementById("bulkTextarea").value = "";
+  parseAndRenderBulk();
+}
+
+function syncConfigInputsToState() {
+  state.cfg.omVoou = document.getElementById("cfgOmVoou").value;
+  state.cfg.ano = document.getElementById("cfgAno").value;
+  state.cfg.encNome = document.getElementById("cfgEncNome").value;
+  state.cfg.encPatente = document.getElementById("cfgEncPatente").value;
+
+  var anoClean = String(state.cfg.ano || "").trim();
+  var badge = document.getElementById("periodoPreviewBadge");
+  badge.textContent = /^\d{4}$/.test(anoClean)
+    ? ("Período: 01/01/" + anoClean + " até 31/12/" + anoClean)
+    : "Informe um ano com 4 dígitos";
+
+  saveStateLocal();
+  parseAndRenderBulk();
+}
+
+function syncStateToConfigInputs() {
+  document.getElementById("cfgOmVoou").value = state.cfg.omVoou || "";
+  document.getElementById("cfgAno").value = state.cfg.ano || "2026";
+  document.getElementById("cfgEncNome").value = state.cfg.encNome || "";
+  document.getElementById("cfgEncPatente").value = state.cfg.encPatente || "";
+  document.getElementById("bulkTextarea").value = state.bulkText || "";
+  setMode(state.cfg.mode || "XY");
+  renderAnvRules();
+}
+
+/* ============================================================================
+ * DOWNLOADS (.ODS E .ZIP)
+ * ============================================================================ */
+function triggerBlobDownload(bytes, filename, mimeType) {
+  var blob = new Blob([bytes], { type: mimeType || "application/octet-stream" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+}
+
+function validateConfig() {
+  if (!templateEntries || templateEntries.length === 0) {
+    showToast("Modelo .ods não carregado.", "error");
+    return false;
+  }
+  if (!state.cfg.omVoou.trim()) {
+    showToast("Informe a OM em que Voou antes de gerar.", "error");
+    document.getElementById("cfgOmVoou").focus();
+    return false;
+  }
+  if (!/^\d{4}$/.test(String(state.cfg.ano || "").trim())) {
+    showToast("Informe o Ano da FCIV com 4 dígitos (ex: 2026).", "error");
+    document.getElementById("cfgAno").focus();
+    return false;
+  }
+  return true;
+}
+
+function downloadSingleByIndex(idx) {
+  var mil = parsedMilitares[idx];
+  if (!mil || !validateConfig()) return;
+  FcivOdsEngine.generateOdsBytes(templateEntries, state.cfg, mil)
+    .then(function (bytes) {
+      var fname = getOutputFilename(mil);
+      triggerBlobDownload(bytes, fname, "application/vnd.oasis.opendocument.spreadsheet");
+      showToast("Arquivo gerado: " + fname, "success");
+    })
+    .catch(function (err) {
+      console.error(err);
+      showToast("Erro ao gerar .ods: " + err.message, "error");
+    });
+}
+
+function downloadAllIndividual() {
+  if (parsedMilitares.length === 0 || !validateConfig()) return;
+  var chain = Promise.resolve();
+  parsedMilitares.forEach(function (mil) {
+    chain = chain.then(function () {
+      return FcivOdsEngine.generateOdsBytes(templateEntries, state.cfg, mil).then(function (bytes) {
+        triggerBlobDownload(bytes, getOutputFilename(mil), "application/vnd.oasis.opendocument.spreadsheet");
+        return new Promise(function (resolve) { setTimeout(resolve, 250); });
+      });
+    });
+  });
+  chain.then(function () {
+    showToast("Download das " + parsedMilitares.length + " FCIV(s) concluído!", "success");
+  }).catch(function (err) {
+    console.error(err);
+    showToast("Erro ao gerar lote: " + err.message, "error");
+  });
+}
+
+function downloadAllZip() {
+  if (parsedMilitares.length === 0 || !validateConfig()) return;
+  var tasks = parsedMilitares.map(function (mil) {
+    return FcivOdsEngine.generateOdsBytes(templateEntries, state.cfg, mil).then(function (bytes) {
+      return { name: getOutputFilename(mil), data: bytes };
+    });
+  });
+  Promise.all(tasks)
+    .then(function (files) {
+      var used = {};
+      for (var i = 0; i < files.length; i++) {
+        var name = files[i].name;
+        if (used[name]) {
+          used[name]++;
+          files[i].name = name.replace(/\.ods$/i, "_" + used[name] + ".ods");
+        } else used[name] = 1;
+      }
+      return OdsZip.buildZip(files, false);
+    })
+    .then(function (zipBytes) {
+      var zipName = "FCIVs_" + sanitizeFilenamePart(state.cfg.omVoou, "ESQD") + "_" + sanitizeFilenamePart(state.cfg.ano, "ANO") + ".zip";
+      triggerBlobDownload(zipBytes, zipName, "application/zip");
+      showToast("Pacote ZIP gerado com " + parsedMilitares.length + " arquivo(s)!", "success");
+    })
+    .catch(function (err) {
+      console.error(err);
+      showToast("Erro ao gerar ZIP: " + err.message, "error");
+    });
+}
+
+function loadTemplateFromBytes(bytes, label) {
+  templateEntries = OdsZip.readZip(bytes);
+  if (!templateEntries.some(function (e) { return e.name === "content.xml"; })) {
+    throw new Error("O arquivo .ods selecionado não contém content.xml.");
+  }
+  document.getElementById("templateStatusBadge").textContent = "Modelo: " + label;
+}
+
+function initApp() {
+  try {
+    loadTemplateFromBytes(OdsZip.base64ToUint8Array(EMBEDDED_TEMPLATE_B64), "NIP_Esqd_ANO.ods (embutido)");
+  } catch (err) {
+    console.error(err);
+    showToast("Erro ao carregar modelo embutido: " + err.message, "error");
+  }
+
+  loadStateLocal();
+  syncStateToConfigInputs();
+  parseAndRenderBulk();
+
+  ["cfgOmVoou", "cfgAno", "cfgEncNome", "cfgEncPatente"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", syncConfigInputsToState);
+  });
+  document.getElementById("bulkTextarea").addEventListener("input", parseAndRenderBulk);
+
+  document.getElementById("customTemplateInput").addEventListener("change", function (evt) {
+    var file = evt.target.files && evt.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        loadTemplateFromBytes(new Uint8Array(e.target.result), file.name + " (personalizado)");
+        showToast("Modelo substituído por: " + file.name, "success");
+      } catch (err) {
+        showToast("Arquivo .ods inválido: " + err.message, "error");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+window.addEventListener("DOMContentLoaded", initApp);
+</script>
+</body>
+</html>
