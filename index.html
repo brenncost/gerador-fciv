@@ -501,27 +501,7 @@
       <span class="stat-chip" id="parsedCountBadge">0 FCIV(s) pronta(s)</span>
     </div>
     <div class="card-body">
-      <div class="alert alert-info">
-        <div>
-          <strong>Ordem das colunas (separadas por TAB ao copiar da planilha, ou por espaço/ponto-e-vírgula):</strong><br>
-          <code>POSTO ATUAL</code> &nbsp;|&nbsp;
-          <code>POSTO ÚLT. VOO</code> &nbsp;|&nbsp;
-          <code>NIP</code> &nbsp;|&nbsp;
-          <code>NOME COMPLETO</code> &nbsp;|&nbsp;
-          <code>OM ONDE SERVE</code> &nbsp;|&nbsp;
-          <code>MODELO ANV</code> &nbsp;|&nbsp;
-          <code>HORAS XY</code> &nbsp;|&nbsp;
-          <code>ÚLTIMO VOO</code>
-          <br>
-          <span style="font-size:0.78rem;">
-            • Se o militar voou <strong>2 ou mais modelos</strong>, você pode colocar os modelos extras na <strong>mesma linha</strong> (<code>MODELO2 HORAS2 DATA2</code>) OU em <strong>linhas separadas com o mesmo NIP</strong> — o sistema agrupa tudo em uma única FCIV!
-          </span>
-          <div class="code-example">CB	CB	15.0000.01	Fulano da Silva Sauro	ESQDHU-2	UH-12	13,1	23/12/2026	UH-17	5,3	05/06/2026
-SO	SO	99.1986.57	ALEX MENEZES	EsqdHU-61	UH-12	1	12/02/2025
-SO	SO	99.2057.42	MANOEL RUI NEY DO NASCIMENTO FILHO	EsqdHU-1	UH-12	85,7	03/12/2025
-SO	SO	99.2181.43	LUCIANO DUARTE DE MORAES	GAerNavMan	UH-12	1,4	26/06/2025</div>
-        </div>
-      </div>
+      <div class="alert alert-info" id="bulkInstructionsBox"></div>
 
       <div class="field">
         <label for="bulkTextarea">
@@ -1186,7 +1166,7 @@ var FcivOdsEngine = (function () {
       setCellByCol(doc, rData, "L", "date", mod.dataUltVoo || "");
 
       var valK = parseDecimal(mod.xy);
-      if (valK !== null) {
+      if (valK !== null && Math.abs(valK) > 1e-9) {
         setCellByCol(doc, rData, "K", "number", valK, 1);
         colTotals["K"] += valK;
       }
@@ -1199,7 +1179,7 @@ var FcivOdsEngine = (function () {
         };
         Object.keys(mapPilotoHoras).forEach(function (colL) {
           var numH = parseDecimal(mapPilotoHoras[colL]);
-          if (numH !== null) {
+          if (numH !== null && Math.abs(numH) > 1e-9) {
             setCellByCol(doc, rData, colL, "number", numH, 1);
             colTotals[colL] += numH;
           }
@@ -1211,7 +1191,7 @@ var FcivOdsEngine = (function () {
         };
         Object.keys(mapPilotoInt).forEach(function (colP) {
           var numP = parseDecimal(mapPilotoInt[colP]);
-          if (numP !== null) {
+          if (numP !== null && Math.abs(numP) > 1e-9) {
             var dec = (Math.abs(numP - Math.round(numP)) < 1e-6) ? 0 : 1;
             setCellByCol(doc, rData, colP, "number", numP, dec);
             colTotals[colP] += numP;
@@ -1347,6 +1327,8 @@ var state = {
     anvRules: [
       { modelo: "UH-12", motor: "MONOMOTOR" },
       { modelo: "UH-17", motor: "MONOMOTOR" },
+      { modelo: "IH-6B", motor: "MONOMOTOR" },
+      { modelo: "IH-18", motor: "MONOMOTOR" },
       { modelo: "UH-15", motor: "BIMOTOR" },
       { modelo: "SH-16", motor: "BIMOTOR" }
     ]
@@ -1402,16 +1384,57 @@ function loadStateLocal() {
       if (parsed && parsed.cfg) {
         state = parsed;
         if (!state.cfg.anvRules) state.cfg.anvRules = [];
+        var defaults = [
+          { modelo: "IH-6B", motor: "MONOMOTOR" },
+          { modelo: "IH-18", motor: "MONOMOTOR" }
+        ];
+        defaults.forEach(function (d) {
+          var exists = state.cfg.anvRules.some(function (r) {
+            return String(r.modelo || "").trim().toUpperCase() === d.modelo;
+          });
+          if (!exists) state.cfg.anvRules.push(d);
+        });
       }
     }
   } catch (e) {}
+}
+
+function updateInstructionsUI() {
+  var box = document.getElementById("bulkInstructionsBox");
+  if (!box) return;
+  if (state.cfg.mode === "PILOTO") {
+    box.innerHTML =
+      '<div>' +
+      '<strong>Modo PILOTO — Ordem das colunas (separadas por TAB ao copiar da planilha, ou por ponto-e-vírgula/espaço):</strong><br>' +
+      '<code>POSTO ATUAL</code> | <code>POSTO ÚLT. VOO</code> | <code>NIP</code> | <code>NOME COMPLETO</code> | <code>OM ONDE SERVE</code> | ' +
+      '<code>MODELO ANV</code> | <code>1P</code> | <code>2P</code> | <code>AL</code> | <code>IN</code> | <code>IV</code> | <code>XY</code> | <code>ÚLT. VOO</code> | <code>SIMUL</code> | ' +
+      '<code>T1</code> | <code>T2</code> | <code>T3</code> | <code>4D</code> | <code>4N</code> | ' +
+      '<code>NAV D</code> | <code>NAV N</code> | <code>TER D</code> | <code>TER N</code> | ' +
+      '<code>CMD ON</code> | <code>COP ON</code> | <code>CMD OFF</code> | <code>COP OFF</code>' +
+      '<br><span style="font-size:0.78rem;">• Campos com <strong>0</strong> ou <strong>0,0</strong> ficam em branco na linha da aeronave. Se o piloto voou 2+ modelos, repita as 22 colunas da aeronave na mesma linha ou cole em linhas separadas com o mesmo NIP.</span>' +
+      '<div class="code-example">CT\tCT\t08.1234.56\tJOAO SILVA\tESQDHU-1\tUH-12\t45,5\t12,0\t0\t10,5\t0\t1,5\t12/11/2026\t6,0\t30,0\t15,0\t20,0\t5,5\t4,0\t14\t4\t60\t12\t25\t10\t8\t2</div>' +
+      '</div>';
+  } else {
+    box.innerHTML =
+      '<div>' +
+      '<strong>Modo XY — Ordem das colunas (separadas por TAB ao copiar da planilha, ou por espaço/ponto-e-vírgula):</strong><br>' +
+      '<code>POSTO ATUAL</code> &nbsp;|&nbsp; <code>POSTO ÚLT. VOO</code> &nbsp;|&nbsp; <code>NIP</code> &nbsp;|&nbsp; <code>NOME COMPLETO</code> &nbsp;|&nbsp; <code>OM ONDE SERVE</code> &nbsp;|&nbsp; <code>MODELO ANV</code> &nbsp;|&nbsp; <code>HORAS XY</code> &nbsp;|&nbsp; <code>ÚLTIMO VOO</code>' +
+      '<br><span style="font-size:0.78rem;">• Se o militar voou <strong>2 ou mais modelos</strong>, você pode colocar os modelos extras na <strong>mesma linha</strong> (<code>MODELO2 HORAS2 DATA2</code>) OU em <strong>linhas separadas com o mesmo NIP</strong> — o sistema agrupa tudo em uma única FCIV!</span>' +
+      '<div class="code-example">CB\tCB\t15.0000.01\tFulano da Silva Sauro\tESQDHU-2\tUH-12\t13,1\t23/12/2026\tUH-17\t5,3\t05/06/2026\n' +
+      'SO\tSO\t99.1986.57\tALEX MENEZES\tEsqdHU-61\tUH-12\t1\t12/02/2025\n' +
+      'SO\tSO\t99.2057.42\tMANOEL RUI NEY DO NASCIMENTO FILHO\tEsqdHU-1\tUH-12\t85,7\t03/12/2025\n' +
+      'SO\tSO\t99.2181.43\tLUCIANO DUARTE DE MORAES\tGAerNavMan\tUH-12\t1,4\t26/06/2025</div>' +
+      '</div>';
+  }
 }
 
 function setMode(mode) {
   state.cfg.mode = mode;
   document.getElementById("btnModeXY").className = "mode-btn" + (mode === "XY" ? " active" : "");
   document.getElementById("btnModePiloto").className = "mode-btn" + (mode === "PILOTO" ? " active" : "");
+  updateInstructionsUI();
   saveStateLocal();
+  parseAndRenderBulk();
 }
 
 function renderAnvRules() {
@@ -1477,26 +1500,49 @@ function isHoursToken(tok) {
 }
 
 function parseSingleLineTokens(line) {
-  // Se tiver TAB ou ponto-e-vírgula, divide diretamente em colunas
+  // Se tiver TAB ou ponto-e-vírgula, divide diretamente em colunas preservando vazios no meio
   if (line.indexOf("\t") !== -1) {
-    return line.split("\t").map(function (s) { return s.trim(); }).filter(function (s, idx, arr) {
-      return !(idx === arr.length - 1 && s === "");
-    });
+    var arrT = line.split("\t").map(function (s) { return s.trim(); });
+    if (arrT.length > 0 && arrT[arrT.length - 1] === "") arrT.pop();
+    return arrT;
   }
   if (line.indexOf(";") !== -1) {
     return line.split(";").map(function (s) { return s.trim(); });
   }
 
-  // Separado por espaços (como digitado manualmente):
-  // POSTO_ATUAL  POSTO_ULT  NIP  <NOME COMPLETO ...>  OM_SERVE  MODELO1  HORAS1  DATA1  [MODELO2 HORAS2 DATA2 ...]
+  // Separado por espaços
   var words = line.trim().split(/\s+/);
+  if (state.cfg.mode === "PILOTO") {
+    if (words.length < 27) return null;
+    // Em Piloto, cada bloco de aeronave tem 22 tokens onde o token [7] é uma data
+    var blocksRev = [];
+    var endP = words.length;
+    while (endP - 22 >= 5) {
+      if (isDateToken(words[endP - 15])) { // 22 - 7 = 15 do final
+        blocksRev.push(words.slice(endP - 22, endP));
+        endP -= 22;
+      } else {
+        break;
+      }
+    }
+    if (blocksRev.length === 0) return null;
+    var omP = words[endP - 1];
+    var nomeP = words.slice(3, endP - 1).join(" ");
+    var colsP = [words[0], words[1], words[2], nomeP, omP];
+    for (var bi = blocksRev.length - 1; bi >= 0; bi--) {
+      colsP = colsP.concat(blocksRev[bi]);
+    }
+    return colsP;
+  }
+
+  // Modo XY separado por espaços:
+  // POSTO_ATUAL  POSTO_ULT  NIP  <NOME COMPLETO ...>  OM_SERVE  MODELO1  HORAS1  DATA1  [MODELO2 HORAS2 DATA2 ...]
   if (words.length < 8) return null;
 
   var postoAtual = words[0];
   var postoUlt = words[1];
   var nip = words[2];
 
-  // Encontra todos os blocos (MODELO, HORAS, DATA) de trás para frente
   var modelsReversed = [];
   var endIdx = words.length;
   while (endIdx - 3 >= 4) {
@@ -1525,10 +1571,11 @@ function parseBulkLines(text) {
   var lines = String(text || "").split(/\r?\n/).filter(function (l) { return l.trim() !== ""; });
   var byKey = {};
   var order = [];
+  var isPiloto = state.cfg.mode === "PILOTO";
 
   for (var i = 0; i < lines.length; i++) {
     var cols = parseSingleLineTokens(lines[i]);
-    if (!cols || cols.length < 8) continue;
+    if (!cols || cols.length < (isPiloto ? 13 : 8)) continue;
 
     // Ignora linha de cabeçalho se colada por engano
     var c0 = cols[0].toUpperCase();
@@ -1554,19 +1601,54 @@ function parseBulkLines(text) {
       order.push(key);
     }
 
-    // Lê trios (MODELO, HORAS, DATA) a partir do índice 5
-    for (var k = 5; k + 2 < cols.length; k += 3) {
-      var modName = (cols[k] || "").trim();
-      var horas = (cols[k + 1] || "").trim();
-      var dtRaw = (cols[k + 2] || "").trim();
-      if (!modName && !horas && !dtRaw) continue;
-      var parsedDt = FcivOdsEngine.parseBrDate(dtRaw);
-      byKey[key].modelos.push({
-        tipoMotor: lookupTipoMotor(modName),
-        modeloAnv: modName,
-        xy: horas,
-        dataUltVoo: parsedDt ? parsedDt.br : dtRaw
-      });
+    if (!isPiloto) {
+      // Modo XY: trios (MODELO, HORAS, DATA) a partir do índice 5
+      for (var k = 5; k + 2 < cols.length; k += 3) {
+        var modName = (cols[k] || "").trim();
+        var horas = (cols[k + 1] || "").trim();
+        var dtRaw = (cols[k + 2] || "").trim();
+        if (!modName && !horas && !dtRaw) continue;
+        var parsedDt = FcivOdsEngine.parseBrDate(dtRaw);
+        byKey[key].modelos.push({
+          tipoMotor: lookupTipoMotor(modName),
+          modeloAnv: modName,
+          xy: horas,
+          dataUltVoo: parsedDt ? parsedDt.br : dtRaw
+        });
+      }
+    } else {
+      // Modo Piloto: blocos de 22 colunas por aeronave a partir do índice 5
+      for (var p = 5; p < cols.length; p += 22) {
+        var modP = (cols[p] || "").trim();
+        if (!modP) continue;
+        var dtRawP = (cols[p + 7] || "").trim();
+        var parsedDtP = FcivOdsEngine.parseBrDate(dtRawP);
+        byKey[key].modelos.push({
+          tipoMotor: lookupTipoMotor(modP),
+          modeloAnv: modP,
+          h1p: cols[p + 1] || "",
+          h2p: cols[p + 2] || "",
+          al: cols[p + 3] || "",
+          inH: cols[p + 4] || "",
+          ivH: cols[p + 5] || "",
+          xy: cols[p + 6] || "",
+          dataUltVoo: parsedDtP ? parsedDtP.br : dtRawP,
+          simulador: cols[p + 8] || "",
+          tipo1: cols[p + 9] || "",
+          tipo2: cols[p + 10] || "",
+          tipo3: cols[p + 11] || "",
+          tipo4D: cols[p + 12] || "",
+          tipo4N: cols[p + 13] || "",
+          pousoNavioD: cols[p + 14] || "",
+          pousoNavioN: cols[p + 15] || "",
+          pousoTerraD: cols[p + 16] || "",
+          pousoTerraN: cols[p + 17] || "",
+          cmdOn: cols[p + 18] || "",
+          copOn: cols[p + 19] || "",
+          cmdOff: cols[p + 20] || "",
+          copOff: cols[p + 21] || ""
+        });
+      }
     }
   }
 
@@ -1575,6 +1657,15 @@ function parseBulkLines(text) {
     mil.dataUltVoo = computeMaxDateForMilitar(mil);
     return mil;
   });
+}
+
+function sumModeloHoras(md) {
+  var total = FcivOdsEngine.parseDecimal(md.xy) || 0;
+  if (state.cfg.mode === "PILOTO") {
+    var arr = [md.h1p, md.h2p, md.al, md.inH, md.ivH];
+    for (var i = 0; i < arr.length; i++) total += FcivOdsEngine.parseDecimal(arr[i]) || 0;
+  }
+  return FcivOdsEngine.formatPtNum(total, 1);
 }
 
 function parseAndRenderBulk() {
@@ -1604,7 +1695,8 @@ function parseAndRenderBulk() {
     for (var j = 0; j < m.modelos.length; j++) {
       var md = m.modelos[j];
       var motorLabel = md.tipoMotor ? md.tipoMotor : "Sem motor cadastrado";
-      modsHtml += '<span class="badge-model">' + escAttr(md.modeloAnv) + ' (' + escAttr(motorLabel) + ') • ' + escAttr(md.xy) + 'h • ' + escAttr(md.dataUltVoo) + '</span>';
+      var hrsLabel = sumModeloHoras(md);
+      modsHtml += '<span class="badge-model">' + escAttr(md.modeloAnv) + ' (' + escAttr(motorLabel) + ') • ' + escAttr(hrsLabel) + 'h • ' + escAttr(md.dataUltVoo) + '</span>';
     }
     html += '<tr>';
     html += '<td><strong>' + (i + 1) + '</strong></td>';
@@ -1623,11 +1715,16 @@ function parseAndRenderBulk() {
 }
 
 function fillExampleBulk() {
-  document.getElementById("bulkTextarea").value =
-    "CB\tCB\t15.0000.01\tFulano da Silva Sauro\tESQDHU-2\tUH-12\t13,1\t23/12/2026\tUH-17\t5,3\t05/06/2026\n" +
-    "SO\tSO\t99.1986.57\tALEX MENEZES\tEsqdHU-61\tUH-12\t1\t12/02/2025\n" +
-    "SO\tSO\t99.2057.42\tMANOEL RUI NEY DO NASCIMENTO FILHO\tEsqdHU-1\tUH-12\t85,7\t03/12/2025\n" +
-    "SO\tSO\t99.2181.43\tLUCIANO DUARTE DE MORAES\tGAerNavMan\tUH-12\t1,4\t26/06/2025";
+  if (state.cfg.mode === "PILOTO") {
+    document.getElementById("bulkTextarea").value =
+      "CT\tCT\t08.1234.56\tJOAO SILVA\tESQDHU-1\tUH-12\t45,5\t12,0\t0\t10,5\t0\t1,5\t12/11/2026\t6,0\t30,0\t15,0\t20,0\t5,5\t4,0\t14\t4\t60\t12\t25\t10\t8\t2";
+  } else {
+    document.getElementById("bulkTextarea").value =
+      "CB\tCB\t15.0000.01\tFulano da Silva Sauro\tESQDHU-2\tUH-12\t13,1\t23/12/2026\tUH-17\t5,3\t05/06/2026\n" +
+      "SO\tSO\t99.1986.57\tALEX MENEZES\tEsqdHU-61\tUH-12\t1\t12/02/2025\n" +
+      "SO\tSO\t99.2057.42\tMANOEL RUI NEY DO NASCIMENTO FILHO\tEsqdHU-1\tUH-12\t85,7\t03/12/2025\n" +
+      "SO\tSO\t99.2181.43\tLUCIANO DUARTE DE MORAES\tGAerNavMan\tUH-12\t1,4\t26/06/2025";
+  }
   parseAndRenderBulk();
 }
 
