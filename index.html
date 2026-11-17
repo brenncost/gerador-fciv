@@ -1189,6 +1189,13 @@ var FcivOdsEngine = (function () {
     setCellByCol(doc, getRowByNumber(sheet, 41 + delta), "N", "string", cfg.encNome || "");
     setCellByCol(doc, getRowByNumber(sheet, 42 + delta), "N", "string", cfg.encPatente || "");
 
+    // Centraliza verticalmente (no meio da linha) os textos e valores das células
+    var NS_STYLE = "urn:oasis:names:tc:opendocument:xmlns:style:1.0";
+    var cellProps = doc.getElementsByTagNameNS(NS_STYLE, "table-cell-properties");
+    for (var sp = 0; sp < cellProps.length; sp++) {
+      cellProps[sp].setAttributeNS(NS_STYLE, "style:vertical-align", "middle");
+    }
+
     var xmlOut = new XMLSerializer().serializeToString(doc);
     if (xmlOut.indexOf("<?xml") !== 0) xmlOut = '<?xml version="1.0" encoding="UTF-8"?>\n' + xmlOut;
     return xmlOut;
